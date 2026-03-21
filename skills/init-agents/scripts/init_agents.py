@@ -105,11 +105,100 @@ def cmd_scan(library_path: str):
 
 
 def update_claude_md(claude_md_path: Path, copied_files: list, dest_dir: Path):
-    pass  # TODO Task 4
+    """Add/update ## Project Team section in CLAUDE.md with newly copied agents."""
+    # Read agent info from their installed files
+    new_agents = {}
+    for filename in copied_files:
+        agent_file = dest_dir / filename
+        if not agent_file.exists():
+            continue
+        content = agent_file.read_text(encoding="utf-8")
+        fm = parse_frontmatter(content)
+        if fm:
+            new_agents[filename] = fm
+
+    if not new_agents:
+        return
+
+    # Read existing CLAUDE.md or start fresh
+    if claude_md_path.exists():
+        claude_content = claude_md_path.read_text(encoding="utf-8").replace("\r\n", "\n")
+    else:
+        claude_content = ""
+
+    section_header = "## Project Team"
+    note = (
+        "> If you add agents manually to `.claude/agents/`, "
+        "add them to this section too."
+    )
+
+    # Parse existing agent entries from current Project Team section (if any)
+    existing_entries = {}
+    section_pattern = re.compile(r"## Project Team\n(.*?)(?=\n## |\Z)", re.DOTALL)
+    match = section_pattern.search(claude_content)
+    if match:
+        for line in match.group(1).splitlines():
+            m = re.match(r"^- \*\*(.+?)\*\*: (.+)$", line)
+            if m:
+                existing_entries[m.group(1)] = line  # keyed by name
+
+    # Merge: existing + new (new overwrites existing on same filename)
+    for filename, fm in new_agents.items():
+        existing_entries[fm["name"]] = (
+            f"- **{fm['name']}**: {fm['description']}"
+        )
+
+    agent_lines = "\n".join(
+        existing_entries[k] for k in sorted(existing_entries.keys())
+    )
+    new_section = (
+        f"{section_header}\n\n"
+        f"The following agents are active in this project:\n\n"
+        f"{agent_lines}\n\n"
+        f"{note}\n"
+    )
+
+    if match:
+        claude_content = section_pattern.sub(new_section, claude_content)
+    else:
+        claude_content = claude_content.rstrip("\n") + "\n\n" + new_section + "\n"
+
+    claude_md_path.write_text(claude_content, encoding="utf-8")
+    print(f"Updated CLAUDE.md — Project Team section now has {len(existing_entries)} agent(s).")
 
 
 def cmd_copy(library_path: str, agents_arg: str, dest: str, claude_md: str = "CLAUDE.md"):
-    pass  # TODO Task 4
+    """Copy approved agents to dest directory. Skips existing. Updates CLAUDE.md."""
+    agent_paths = [a.strip() for a in agents_arg.split(",") if a.strip()]
+    if not agent_paths:
+        print("No agents to copy. Exiting.")
+        return
+
+    dest_dir = Path(dest)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    copied = []
+    skipped = []
+
+    for rel_path in agent_paths:
+        source = Path(library_path) / "categories" / rel_path
+        filename = Path(rel_path).name
+        destination = dest_dir / filename
+
+        if destination.exists():
+            print(f"[SKIP] {filename} already exists — skipped")
+            skipped.append(filename)
+        else:
+            shutil.copy2(source, destination)
+            print(f"[OK] {filename} copied")
+            copied.append(filename)
+
+    print(f"\n{len(copied)} agent(s) copied, {len(skipped)} skipped.")
+    if skipped:
+        print(f"Skipped: {', '.join(skipped)}")
+
+    if copied:
+        update_claude_md(Path(claude_md), copied, dest_dir)
 
 
 def main():
