@@ -85,22 +85,11 @@ chore: scaffolding, tooling, config
 
 ## Plugin Installation (for users)
 
-Add to `~/.claude/settings.json`:
+In Claude Code, run:
 
-```json
-{
-  "extraKnownMarketplaces": {
-    "agent-team-manager": {
-      "source": {
-        "source": "github",
-        "repo": "mbaltunsu/claude-code-agent-team-manager"
-      }
-    }
-  },
-  "enabledPlugins": {
-    "init-team@agent-team-manager": true
-  }
-}
+```
+/plugin marketplace add https://github.com/mbaltunsu/claude-code-agent-team-manager.git
+/plugin install init-team@agent-team-manager
 ```
 
 Then run `/init-team` in any Claude Code project.

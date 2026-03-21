@@ -12,33 +12,23 @@ A Claude Code skill that bootstraps the right agent files into your project from
 
 **No agent library?** The skill can auto-download agents from [awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) into `~/.claude/agent-library/` — just say "No" when asked if you have a local library.
 
-## Plugin installation (recommended)
+## Installation
 
-Add to `~/.claude/settings.json`:
+In Claude Code, run these two commands:
 
-```json
-{
-  "extraKnownMarketplaces": {
-    "agent-team-manager": {
-      "source": {
-        "source": "github",
-        "repo": "mbaltunsu/claude-code-agent-team-manager"
-      }
-    }
-  },
-  "enabledPlugins": {
-    "init-team@agent-team-manager": true
-  }
-}
+```
+/plugin marketplace add https://github.com/mbaltunsu/claude-code-agent-team-manager.git
 ```
 
-Restart Claude Code. `/init-team` is now available in every project — no per-project setup needed.
+```
+/plugin install init-team@agent-team-manager
+```
 
-> **Note:** `agent-team-manager` is a local alias you choose. It must match exactly what appears after `@` in `enabledPlugins`. Avoid names that conflict with existing marketplace keys in your settings (e.g. `claude-plugins-official`, `superpowers-marketplace`).
+Done. `/init-team` is now available in every project — no per-project setup needed.
 
-## Manual installation (alternative)
+### Alternative: manual installation
 
-Copy the `skills/init-team/` folder into your project:
+If you prefer not to use the plugin system, copy the skill folder directly:
 
 ```bash
 # Per-project
