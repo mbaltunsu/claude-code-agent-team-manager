@@ -8,7 +8,7 @@ A Claude Code skill that bootstraps the right agent files into your project from
 2. Reads your project brief (`CLAUDE.md` or `docs/superpowers/specs/*.md`)
 3. Recommends agents that fit your project
 4. Copies approved agents into `.claude/agents/` (never overwrites existing ones)
-5. Updates `CLAUDE.md` with a `## Project Team` section listing every agent added
+5. Creates/updates `TEAM.md` with the full agent roster; adds a pointer in `CLAUDE.md`
 
 ## Installation
 

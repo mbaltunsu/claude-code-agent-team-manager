@@ -104,9 +104,9 @@ def cmd_scan(library_path: str):
     print(json.dumps(agents, indent=2))
 
 
-def update_claude_md(claude_md_path: Path, copied_files: list, dest_dir: Path):
-    """Add/update ## Project Team section in CLAUDE.md with newly copied agents."""
-    # Read agent info from their installed files
+def update_project_files(claude_md_path: Path, team_md_path: Path, copied_files: list, dest_dir: Path):
+    """Write agent info to TEAM.md and add a pointer in CLAUDE.md."""
+    # Read agent info from installed files
     new_agents = {}
     for filename in copied_files:
         agent_file = dest_dir / filename
@@ -120,29 +120,22 @@ def update_claude_md(claude_md_path: Path, copied_files: list, dest_dir: Path):
     if not new_agents:
         return
 
-    # Read existing CLAUDE.md or start fresh
-    if claude_md_path.exists():
-        claude_content = claude_md_path.read_text(encoding="utf-8").replace("\r\n", "\n")
-    else:
-        claude_content = ""
-
-    section_header = "## Project Team"
+    # --- Update TEAM.md ---
     note = (
         "> If you add agents manually to `.claude/agents/`, "
-        "add them to this section too."
+        "add them to this file too."
     )
 
-    # Parse existing agent entries from current Project Team section (if any)
+    # Read existing TEAM.md entries (if any)
     existing_entries = {}
-    section_pattern = re.compile(r"^## Project Team\n(.*?)(?=^## |\Z)", re.DOTALL | re.MULTILINE)
-    match = section_pattern.search(claude_content)
-    if match:
-        for line in match.group(1).splitlines():
+    if team_md_path.exists():
+        team_content = team_md_path.read_text(encoding="utf-8").replace("\r\n", "\n")
+        for line in team_content.splitlines():
             m = re.match(r"^- \*\*(.+?)\*\*: (.+)$", line)
             if m:
-                existing_entries[m.group(1)] = line  # keyed by name
+                existing_entries[m.group(1)] = line  # keyed by agent name
 
-    # Merge: existing + new (new overwrites existing on same filename)
+    # Merge: existing + new (new overwrites existing on same name)
     for filename, fm in new_agents.items():
         agent_name = fm["name"]
         if agent_name in existing_entries:
@@ -150,31 +143,42 @@ def update_claude_md(claude_md_path: Path, copied_files: list, dest_dir: Path):
                 f"Warning: Agent name '{agent_name}' from {filename} conflicts with an existing entry — overwriting.",
                 file=sys.stderr,
             )
-        existing_entries[agent_name] = (
-            f"- **{fm['name']}**: {fm['description']}"
-        )
+        existing_entries[agent_name] = f"- **{fm['name']}**: {fm['description']}"
 
-    agent_lines = "\n".join(
-        existing_entries[k] for k in sorted(existing_entries.keys())
-    )
-    new_section = (
-        f"{section_header}\n\n"
-        f"The following agents are active in this project:\n\n"
+    agent_lines = "\n".join(existing_entries[k] for k in sorted(existing_entries))
+    team_content = (
+        "# Project Team\n\n"
+        "The following agents are active in this project:\n\n"
         f"{agent_lines}\n\n"
         f"{note}\n"
     )
+    team_md_path.write_text(team_content, encoding="utf-8")
+    print(f"Updated TEAM.md — {len(existing_entries)} agent(s) listed.")
 
-    if match:
-        claude_content = section_pattern.sub(lambda _: new_section, claude_content)
+    # --- Update CLAUDE.md pointer ---
+    pointer_section = (
+        "## Project Team\n\n"
+        f"See [{team_md_path.name}]({team_md_path.name}) for the list of agents configured for this project.\n"
+    )
+    section_pattern = re.compile(r"^## Project Team\n(.*?)(?=^## |\Z)", re.DOTALL | re.MULTILINE)
+
+    if claude_md_path.exists():
+        claude_content = claude_md_path.read_text(encoding="utf-8").replace("\r\n", "\n")
     else:
-        claude_content = claude_content.rstrip("\n") + "\n\n" + new_section + "\n"
+        claude_content = ""
+
+    match = section_pattern.search(claude_content)
+    if match:
+        claude_content = section_pattern.sub(lambda _: pointer_section, claude_content)
+    else:
+        claude_content = claude_content.rstrip("\n") + "\n\n" + pointer_section + "\n"
 
     claude_md_path.write_text(claude_content, encoding="utf-8")
-    print(f"Updated CLAUDE.md — Project Team section now has {len(existing_entries)} agent(s).")
+    print(f"Updated CLAUDE.md — Project Team section points to {team_md_path.name}.")
 
 
-def cmd_copy(library_path: str, agents_arg: str, dest: str, claude_md: str = "CLAUDE.md"):
-    """Copy approved agents to dest directory. Skips existing. Updates CLAUDE.md."""
+def cmd_copy(library_path: str, agents_arg: str, dest: str, claude_md: str = "CLAUDE.md", team_md: str = "TEAM.md"):
+    """Copy approved agents to dest directory. Skips existing. Updates TEAM.md and CLAUDE.md."""
     agent_paths = [a.strip() for a in agents_arg.split(",") if a.strip()]
     if not agent_paths:
         print("No agents to copy. Exiting.")
@@ -204,7 +208,7 @@ def cmd_copy(library_path: str, agents_arg: str, dest: str, claude_md: str = "CL
         print(f"Skipped: {', '.join(skipped)}")
 
     if copied:
-        update_claude_md(Path(claude_md), copied, dest_dir)
+        update_project_files(Path(claude_md), Path(team_md), copied, dest_dir)
 
 
 def main():
@@ -220,6 +224,7 @@ def main():
     copy_p.add_argument("--agents", required=True, help="Comma-separated category/file paths")
     copy_p.add_argument("--dest", default=".claude/agents", help="Destination directory")
     copy_p.add_argument("--claude-md", default="CLAUDE.md", help="Path to project CLAUDE.md")
+    copy_p.add_argument("--team-md", default="TEAM.md", help="Path to project TEAM.md")
 
     args = parser.parse_args()
     env = load_env(Path.cwd())
@@ -231,7 +236,7 @@ def main():
     if args.command == "scan":
         cmd_scan(library_path)
     elif args.command == "copy":
-        cmd_copy(library_path, args.agents, args.dest, args.claude_md)
+        cmd_copy(library_path, args.agents, args.dest, args.claude_md, args.team_md)
 
 
 if __name__ == "__main__":

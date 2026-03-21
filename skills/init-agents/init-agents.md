@@ -109,13 +109,15 @@ python skills/init-agents/scripts/init_agents.py copy \
   --agents "<comma-separated paths>" \
   --path "<LIBRARY_PATH>" \
   --dest .claude/agents \
-  --claude-md CLAUDE.md
+  --claude-md CLAUDE.md \
+  --team-md TEAM.md
 ```
 
 The script will:
 1. Copy newly approved agents into `.claude/agents/` (skipping existing ones)
-2. Automatically update `CLAUDE.md` with a `## Project Team` section listing every copied agent (name, filename, description)
+2. Create/update `TEAM.md` with a `# Project Team` section listing every copied agent (name and description)
 3. Add a note in that section reminding the team to manually update it if agents are added outside this skill
+4. Add a `## Project Team` section in `CLAUDE.md` that points to `TEAM.md`
 
 Report the script output to the user exactly as printed.
 
