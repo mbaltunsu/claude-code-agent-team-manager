@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from init_agents import cmd_copy, update_project_files
+from init_team import cmd_copy, update_project_files
 
 
 def make_library(base: Path) -> Path:

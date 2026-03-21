@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""init_agents.py — CLI script for the Claude Code init-agents skill."""
+"""init_team.py — CLI script for the Claude Code init-team skill."""
 
 import argparse
 import json
 import re
 import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Optional
+
+DEFAULT_REPO = "https://github.com/VoltAgent/awesome-claude-code-subagents.git"
+DEFAULT_DEST = str(Path.home() / ".claude" / "agent-library")
 
 
 def _ensure_utf8_stdout():
@@ -58,7 +63,6 @@ def resolve_library_path(cli_path: Optional[str], env_path: Optional[str]) -> st
 
 def parse_frontmatter(content: str) -> Optional[dict]:
     """Extract name and description from YAML frontmatter. Returns None if invalid."""
-    # Normalize line endings for cross-platform compatibility
     content = content.replace("\r\n", "\n")
     match = re.match(r"^---\s*\n(.*?)\n---\s*\n?", content, re.DOTALL)
     if not match:
@@ -106,7 +110,6 @@ def cmd_scan(library_path: str):
 
 def update_project_files(claude_md_path: Path, team_md_path: Path, copied_files: list, dest_dir: Path):
     """Write agent info to TEAM.md and add a pointer in CLAUDE.md."""
-    # Read agent info from installed files
     new_agents = {}
     for filename in copied_files:
         agent_file = dest_dir / filename
@@ -120,22 +123,19 @@ def update_project_files(claude_md_path: Path, team_md_path: Path, copied_files:
     if not new_agents:
         return
 
-    # --- Update TEAM.md ---
     note = (
         "> If you add agents manually to `.claude/agents/`, "
         "add them to this file too."
     )
 
-    # Read existing TEAM.md entries (if any)
     existing_entries = {}
     if team_md_path.exists():
         team_content = team_md_path.read_text(encoding="utf-8").replace("\r\n", "\n")
         for line in team_content.splitlines():
             m = re.match(r"^- \*\*(.+?)\*\*: (.+)$", line)
             if m:
-                existing_entries[m.group(1)] = line  # keyed by agent name
+                existing_entries[m.group(1)] = line
 
-    # Merge: existing + new (new overwrites existing on same name)
     for filename, fm in new_agents.items():
         agent_name = fm["name"]
         if agent_name in existing_entries:
@@ -155,7 +155,6 @@ def update_project_files(claude_md_path: Path, team_md_path: Path, copied_files:
     team_md_path.write_text(team_content, encoding="utf-8")
     print(f"Updated TEAM.md — {len(existing_entries)} agent(s) listed.")
 
-    # --- Update CLAUDE.md pointer ---
     pointer_section = (
         "## Project Team\n\n"
         f"See [{team_md_path.name}]({team_md_path.name}) for the list of agents configured for this project.\n"
@@ -211,9 +210,97 @@ def cmd_copy(library_path: str, agents_arg: str, dest: str, claude_md: str = "CL
         update_project_files(Path(claude_md), Path(team_md), copied, dest_dir)
 
 
+def cmd_download(dest: Optional[str] = None, repo: Optional[str] = None) -> str:
+    """Download agents from a GitHub repo using git sparse-checkout.
+
+    Returns JSON string with results. Uses subprocess to call git CLI
+    (stdlib only — no third-party dependencies).
+    """
+    dest = dest or DEFAULT_DEST
+    repo = repo or DEFAULT_REPO
+    dest_path = Path(dest)
+
+    if shutil.which("git") is None:
+        return json.dumps({"error": "git is required but not found on PATH"})
+
+    tmp_dir = tempfile.mkdtemp()
+    warning = None
+
+    try:
+        clone_result = subprocess.run(
+            ["git", "clone", "--filter=blob:none", "--no-checkout", "--depth=1", repo, tmp_dir],
+            capture_output=True,
+            text=True,
+        )
+        if clone_result.returncode != 0:
+            return json.dumps({"error": f"Failed to clone repository: {clone_result.stderr.strip()}"})
+
+        subprocess.run(
+            ["git", "-C", tmp_dir, "sparse-checkout", "init", "--cone"],
+            capture_output=True,
+            text=True,
+        )
+        subprocess.run(
+            ["git", "-C", tmp_dir, "sparse-checkout", "set", "categories"],
+            capture_output=True,
+            text=True,
+        )
+        checkout_result = subprocess.run(
+            ["git", "-C", tmp_dir, "checkout"],
+            capture_output=True,
+            text=True,
+        )
+        if checkout_result.returncode != 0:
+            return json.dumps({"error": f"Failed to checkout: {checkout_result.stderr.strip()}"})
+
+        src_categories = Path(tmp_dir) / "categories"
+        dest_categories = dest_path / "categories"
+        dest_categories.mkdir(parents=True, exist_ok=True)
+
+        downloaded = []
+        skipped = []
+
+        if src_categories.is_dir():
+            for category_dir in sorted(src_categories.iterdir()):
+                if not category_dir.is_dir():
+                    continue
+                dest_cat = dest_categories / category_dir.name
+                dest_cat.mkdir(parents=True, exist_ok=True)
+
+                for agent_file in sorted(category_dir.glob("*.md")):
+                    rel_path = f"{category_dir.name}/{agent_file.name}"
+                    dest_file = dest_cat / agent_file.name
+
+                    if dest_file.exists():
+                        skipped.append(rel_path)
+                    else:
+                        shutil.copy2(agent_file, dest_file)
+                        downloaded.append(rel_path)
+
+        result = {
+            "downloaded": downloaded,
+            "skipped": skipped,
+            "dest": str(dest_path),
+        }
+
+    except Exception as e:
+        return json.dumps({"error": f"Download failed: {str(e)}"})
+
+    finally:
+        try:
+            shutil.rmtree(tmp_dir)
+        except Exception:
+            warning = f"Could not clean up temporary directory: {tmp_dir}"
+
+    if warning:
+        result["warning"] = warning
+
+    return json.dumps(result)
+
+
 def main():
     _ensure_utf8_stdout()
-    parser = argparse.ArgumentParser(description="init-agents script")
+    parser = argparse.ArgumentParser(description="init-team script")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     scan_p = subparsers.add_parser("scan")
@@ -226,7 +313,20 @@ def main():
     copy_p.add_argument("--claude-md", default="CLAUDE.md", help="Path to project CLAUDE.md")
     copy_p.add_argument("--team-md", default="TEAM.md", help="Path to project TEAM.md")
 
+    download_p = subparsers.add_parser("download")
+    download_p.add_argument("--dest", default=DEFAULT_DEST, help="Destination directory for downloaded agents")
+    download_p.add_argument("--repo", default=DEFAULT_REPO, help="Git repository URL to download from")
+
     args = parser.parse_args()
+
+    if args.command == "download":
+        result = cmd_download(dest=args.dest, repo=args.repo)
+        print(result)
+        output = json.loads(result)
+        if "error" in output:
+            sys.exit(1)
+        return
+
     env = load_env(Path.cwd())
     library_path = resolve_library_path(
         cli_path=args.path,

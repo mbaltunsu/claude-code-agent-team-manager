@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from init_agents import load_env, resolve_library_path
+from init_team import load_env, resolve_library_path
 
 
 # --- load_env ---

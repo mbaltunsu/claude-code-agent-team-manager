@@ -1,9 +1,9 @@
 ---
-name: init-agents
-description: Bootstrap agents into this project from a central agent library. Recommends and copies the right agents based on project context (CLAUDE.md or spec docs). Run at project start or any time during development.
+name: init-team
+description: Bootstrap agents into this project from a central agent library. Recommends and copies the right agents based on project context (CLAUDE.md or spec docs). Can auto-download agents from GitHub for users without a local library. Run at project start or any time during development.
 ---
 
-# Init-Agents Skill
+# Init-Team Skill
 
 You are setting up project-specific agents. Follow these steps exactly in order.
 
@@ -27,22 +27,40 @@ Use the Grep tool to search for `^AGENTS_LIBRARY_PATH=` in `.env` in the project
 If a match is found, extract the value after `=` and store it as `LIBRARY_PATH`.
 
 If no match is found (or `.env` does not exist), ask the user:
-> "Enter the path to your agent library:"
+> "Do you have a local agent library? (YES / NO)"
 
-Store their answer as `LIBRARY_PATH`. Do not write it to any file. Path validation happens in Step 4 when the script runs.
+Handle the response:
+
+- **YES** → ask: "Enter the path to your agent library:" and store their answer as `LIBRARY_PATH`. Do not write it to any file. Path validation happens in Step 4 when the script runs.
+- **NO** → run the download command to fetch agents from GitHub:
+
+```bash
+python skills/init-team/scripts/init_team.py download
+```
+
+This clones agents from the default repository (VoltAgent/awesome-claude-code-subagents) into `~/.claude/agent-library/`. Parse the JSON output to confirm success.
+
+If the download succeeds, set `LIBRARY_PATH` to the `dest` value from the JSON output. Continue to Step 3.
+
+If the download fails (JSON contains an `error` key), report the error to the user and stop.
+
+The user can also specify a custom destination or repository:
+```bash
+python skills/init-team/scripts/init_team.py download --dest "/custom/path" --repo "https://github.com/user/repo.git"
+```
 
 ## Step 3: Verify Script Exists
 
-Use the Glob tool with pattern `skills/init-agents/scripts/init_agents.py` from the project root to check the script is installed.
+Use the Glob tool with pattern `skills/init-team/scripts/init_team.py` from the project root to check the script is installed.
 
 If not found, stop and tell the user:
-> "Script not found at skills/init-agents/scripts/init_agents.py. Is init-agents installed in this project?"
+> "Script not found at skills/init-team/scripts/init_team.py. Is init-team installed in this project?"
 
 ## Step 4: Scan Agent Library
 
 Run:
 ```bash
-python skills/init-agents/scripts/init_agents.py scan --path "<LIBRARY_PATH>"
+python skills/init-team/scripts/init_team.py scan --path "<LIBRARY_PATH>"
 ```
 
 Parse the JSON output. Each entry contains: `category`, `name`, `file`, `path`, `description`.
@@ -105,7 +123,7 @@ Build a comma-separated list of `path` values for the approved agents
 
 Run:
 ```bash
-python skills/init-agents/scripts/init_agents.py copy \
+python skills/init-team/scripts/init_team.py copy \
   --agents "<comma-separated paths>" \
   --path "<LIBRARY_PATH>" \
   --dest .claude/agents \

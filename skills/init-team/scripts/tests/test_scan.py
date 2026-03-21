@@ -1,7 +1,7 @@
 import json
 import pytest
 from pathlib import Path
-from init_agents import parse_frontmatter, cmd_scan
+from init_team import parse_frontmatter, cmd_scan
 
 
 # --- parse_frontmatter ---
