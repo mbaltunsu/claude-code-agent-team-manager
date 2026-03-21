@@ -7,6 +7,7 @@ import re
 import shutil
 import sys
 from pathlib import Path
+from typing import Optional
 
 
 def _ensure_utf8_stdout():
@@ -31,7 +32,7 @@ def load_env(cwd: Path) -> dict:
     return result
 
 
-def resolve_library_path(cli_path: str | None, env_path: str | None) -> str:
+def resolve_library_path(cli_path: Optional[str], env_path: Optional[str]) -> str:
     """Resolve library path: CLI arg > env var > error."""
     path_str = cli_path or env_path
     if not path_str:
@@ -55,7 +56,7 @@ def resolve_library_path(cli_path: str | None, env_path: str | None) -> str:
     return str(path)
 
 
-def parse_frontmatter(content: str) -> dict | None:
+def parse_frontmatter(content: str) -> Optional[dict]:
     pass  # TODO Task 3
 
 
