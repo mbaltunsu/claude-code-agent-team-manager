@@ -1,0 +1,18 @@
+{
+  "name": "agent-team-manager",
+  "description": "Marketplace for the Claude Code agent team manager plugin",
+  "owner": {
+    "name": "mbaltunsu"
+  },
+  "plugins": [
+    {
+      "name": "init-agents",
+      "description": "Bootstrap agents into your project from a central agent library. Recommends and copies the right agents, tracks them in TEAM.md.",
+      "version": "1.0.0",
+      "source": "./",
+      "author": {
+        "name": "mbaltunsu"
+      }
+    }
+  ]
+}
