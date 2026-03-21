@@ -10,7 +10,31 @@ A Claude Code skill that bootstraps the right agent files into your project from
 4. Copies approved agents into `.claude/agents/` (never overwrites existing ones)
 5. Creates/updates `TEAM.md` with the full agent roster; adds a pointer in `CLAUDE.md`
 
-## Installation
+## Plugin installation (recommended)
+
+Add to `~/.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "agent-team-manager": {
+      "source": {
+        "source": "github",
+        "repo": "mbaltunsu/claude-code-agent-team-manager"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "init-agents@agent-team-manager": true
+  }
+}
+```
+
+Restart Claude Code. `/init-agents` is now available in every project — no per-project setup needed.
+
+> **Note:** `agent-team-manager` is a local alias you choose. It must match exactly what appears after `@` in `enabledPlugins`. Avoid names that conflict with existing marketplace keys in your settings (e.g. `claude-plugins-official`, `superpowers-marketplace`).
+
+## Installation (manual alternative)
 
 Copy the `skills/init-agents/` folder into your project:
 
