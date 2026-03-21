@@ -21,6 +21,8 @@ Claude Code's plugin system has two layers:
 
 After a marketplace is registered and the plugin is enabled, Claude Code clones the repo into its local cache and exposes all skills under `skills/` to the user.
 
+> **Key naming note:** The key used in `extraKnownMarketplaces` (e.g. `"agent-team-manager"`) is a local alias — it can be any string the user chooses. It must match exactly what appears after `@` in the `enabledPlugins` entry (e.g. `"init-agents@agent-team-manager"`). It does not need to match the `name` field inside `marketplace.json`. Avoid using keys that shadow existing marketplace names like `"claude-plugins-official"` or `"superpowers-marketplace"`.
+
 ---
 
 ## Repository Structure (after this change)
@@ -64,7 +66,10 @@ The existing `skills/init-agents/` directory already satisfies the plugin spec. 
       "name": "init-agents",
       "description": "Bootstrap agents into your project from a central agent library. Recommends and copies the right agents, tracks them in TEAM.md.",
       "version": "1.0.0",
-      "source": "./"
+      "source": "./",
+      "author": {
+        "name": "mbaltunsu"
+      }
     }
   ]
 }
@@ -119,19 +124,19 @@ In any Claude Code project:
 /init-agents
 ```
 
-Claude Code serves the skill from its local plugin cache. No per-project installation needed.
+Restart Claude Code after editing `settings.json`. Claude Code clones the plugin on startup and serves the skill from its local cache. No per-project installation needed.
 
 ---
 
 ## Versioning
 
-The version field in both JSON files (`"1.0.0"`) is a string — Claude Code uses it for display only at this stage. It should be bumped manually in both files when a significant change is released, alongside a matching git tag (`v1.0.0`).
+The `version` field in `marketplace.json` (inside the `plugins` array) is used by Claude Code for display and cache invalidation. The `version` field in `plugin.json` is optional but included for consistency. Keep them in sync — bump both when releasing a significant change, alongside a matching git tag (`v1.0.0`). If they diverge, `marketplace.json` is the authoritative version Claude Code uses when deciding whether to update the cached plugin.
 
 ---
 
 ## README Update
 
-The README gets a new **Plugin installation** section placed above the existing manual installation section. It contains the ready-to-paste `settings.json` snippet from the User Installation section above, plus a note that `/init-agents` is available immediately after the settings change.
+The README gets a new **Plugin installation** section placed above the existing manual installation section. It contains the ready-to-paste `settings.json` snippet from the User Installation section above, plus a note that `/init-agents` is available after restarting Claude Code.
 
 The existing manual installation section (copying `skills/init-agents/` into `.claude/skills/`) is kept as the alternative for users who prefer not to use the plugin system or want a local-only copy.
 
