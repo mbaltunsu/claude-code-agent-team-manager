@@ -134,7 +134,7 @@ def update_claude_md(claude_md_path: Path, copied_files: list, dest_dir: Path):
 
     # Parse existing agent entries from current Project Team section (if any)
     existing_entries = {}
-    section_pattern = re.compile(r"## Project Team\n(.*?)(?=\n## |\Z)", re.DOTALL)
+    section_pattern = re.compile(r"^## Project Team\n(.*?)(?=^## |\Z)", re.DOTALL | re.MULTILINE)
     match = section_pattern.search(claude_content)
     if match:
         for line in match.group(1).splitlines():
@@ -144,7 +144,13 @@ def update_claude_md(claude_md_path: Path, copied_files: list, dest_dir: Path):
 
     # Merge: existing + new (new overwrites existing on same filename)
     for filename, fm in new_agents.items():
-        existing_entries[fm["name"]] = (
+        agent_name = fm["name"]
+        if agent_name in existing_entries:
+            print(
+                f"Warning: Agent name '{agent_name}' from {filename} conflicts with an existing entry — overwriting.",
+                file=sys.stderr,
+            )
+        existing_entries[agent_name] = (
             f"- **{fm['name']}**: {fm['description']}"
         )
 
@@ -159,7 +165,7 @@ def update_claude_md(claude_md_path: Path, copied_files: list, dest_dir: Path):
     )
 
     if match:
-        claude_content = section_pattern.sub(new_section, claude_content)
+        claude_content = section_pattern.sub(lambda _: new_section, claude_content)
     else:
         claude_content = claude_content.rstrip("\n") + "\n\n" + new_section + "\n"
 
