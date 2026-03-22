@@ -1,0 +1,13 @@
+{
+  "name": "team",
+  "description": "Manage your project agent team with three skills: team:init-team (full agent setup), team:add-agent (add by name or capability), team:init-project (bootstrap .claude/rules and CLAUDE.md from starter templates). Tracks agents and rules in CLAUDE.md automatically.",
+  "version": "4.0.0",
+  "author": {
+    "name": "mbaltunsu"
+  },
+  "homepage": "https://github.com/mbaltunsu/claude-code-agent-team-manager",
+  "repository": "https://github.com/mbaltunsu/claude-code-agent-team-manager",
+  "license": "MIT",
+  "keywords": ["agents", "init", "bootstrap", "claude-code", "team"],
+  "skills": "../skills/"
+}
