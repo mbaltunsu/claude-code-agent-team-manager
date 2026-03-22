@@ -108,10 +108,21 @@ Collect context from **all available sources** to inform agent recommendations. 
    Parse JSON output. Do not recommend agents that are already installed.
 7. **User's prompt/request** — use whatever the user said when invoking the skill as primary context for recommendations.
 
-If no context sources exist at all, tell the user:
-> "No project brief found. Recommendations may be generic. Consider creating a CLAUDE.md before running this skill."
+**Context check — do this before Step 6:**
 
-Continue regardless — do not stop.
+A "meaningful context" is any of:
+- CLAUDE.md exists with substantive content (more than just the starter template headers)
+- At least one plan or spec doc found
+- At least one tech stack file found (`package.json`, `requirements.txt`, `Cargo.toml`, etc.)
+- User's invocation prompt describes the project (more than just "init-team" or "setup agents")
+
+If **none** of these are true — the project is a blank slate with no description — **STOP** and ask:
+
+> "I need to know what you're building before I can recommend the right agents. Generic recommendations won't be useful.
+>
+> Please describe your project in a few sentences: what does it do, who uses it, and what tech stack are you planning to use?"
+
+Wait for the user's response, then use it as the primary context for Step 6. Do **not** proceed with recommendations without at least a brief project description.
 
 ### Step 6: Recommend Agents
 
