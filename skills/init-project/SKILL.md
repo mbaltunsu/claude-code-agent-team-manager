@@ -9,17 +9,19 @@ Bootstrap a new project's Claude Code configuration from scratch.
 
 ---
 
-## Step 0: Plan Mode — Gather Project Context
+## Step 0: Gather Project Context via Q&A
 
-Before making any changes, gather context to inform the rule files you'll create:
+Before making any changes, ask the user the following questions in a single message. Do **not** infer or guess from files, folder names, or project structure — use only what the user tells you.
 
-- Read `README.md` if present
-- Read `package.json`, `requirements.txt`, `Cargo.toml`, `go.mod`, or `pyproject.toml` if present
-- List files in the project root to understand the project type and structure
-- Read existing `CLAUDE.md` if present
-- Note: tech stack, main purpose, architectural patterns, team conventions
+> 1. **What does this project do?** (purpose and goal — one or two sentences)
+> 2. **Who uses it?** (audience: internal tool, external users, library consumers, CLI users, etc.)
+> 3. **What tech stack?** (language, runtime, frameworks, key libraries)
+> 4. **What is the current state?** (greenfield, MVP, active development, production, being refactored, etc.)
+> 5. **Any hard rules or constraints?** (things Claude should never do, dependencies to avoid, architectural limits)
 
-Hold this context in mind — you'll use it to write `architecture.md`, `tech-stack.md`, and `project-context.md` in later steps.
+Wait for the user's response. Use their answers verbatim to fill in the rule files in Steps 3–5.
+
+If the user skips a question or says "skip" / "I don't know", mark that section with `TODO: fill in` in the generated file.
 
 ---
 
@@ -71,7 +73,7 @@ Check if `.claude/rules/architecture.md` already exists. If it does, ask:
 
 If `NO`, skip this file and continue to Step 4.
 
-Write `.claude/rules/architecture.md` with content based on your gathered context:
+Write `.claude/rules/architecture.md` using only the user's answers from Step 0. Do not infer or add anything the user did not say. For any skipped section, write `TODO: fill in`:
 
 ```markdown
 # Architecture
@@ -93,7 +95,7 @@ Write `.claude/rules/architecture.md` with content based on your gathered contex
 
 ## Step 4: Create `.claude/rules/tech-stack.md`
 
-Same overwrite permission flow as Step 3. Write based on detected tech stack:
+Same overwrite permission flow as Step 3. Write using only the tech stack the user described in Step 0. Do not detect or infer from project files:
 
 ```markdown
 # Tech Stack
@@ -118,7 +120,7 @@ Same overwrite permission flow as Step 3. Write based on detected tech stack:
 
 ## Step 5: Create `.claude/rules/project-context.md`
 
-Same overwrite permission flow. Write:
+Same overwrite permission flow. Write using only what the user told you in Step 0. Do not infer or add anything not explicitly stated. For any skipped question, write `TODO: fill in`:
 
 ```markdown
 # Project Context

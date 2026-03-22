@@ -19,26 +19,36 @@ You manage project-specific agents. Detect the user's intent and route to the co
 
 ### Step 1: Detect Python
 
-Run:
+Try each of the following in order until one succeeds:
+```bash
+py --version
+```
 ```bash
 python --version
 ```
-If that fails, run `python3 --version`.
+```bash
+python3 --version
+```
+```bash
+py3 --version
+```
 
-If neither works, stop and tell the user:
+If none work, stop and tell the user:
 > "Python not found. Install from https://www.python.org before running this skill."
 
-Use whichever command worked (`python` or `python3`) for all subsequent steps.
+Use whichever command worked for all subsequent steps.
 
 ### Step 2: Resolve Library Path
 
 Check whether the central agents directory already has content:
 
 ```bash
-python skills/init-team/scripts/init_team.py list --dest ~/.claude/team-management/agents
+<PYTHON> skills/init-team/scripts/init_team.py scan --path ~/.claude/team-management/agents
 ```
 
-- **If agents are found** → set `LIBRARY_PATH` to `~/.claude/team-management/agents` and continue to Step 3.
+Parse the JSON output (an array of agent objects).
+
+- **If the array is non-empty** → set `LIBRARY_PATH` to `~/.claude/team-management/agents` and continue to Step 3.
 
 - **If empty or missing** → ask the user:
   > "No agents found in the central store (`~/.claude/team-management/agents`). Choose:
@@ -115,6 +125,8 @@ A "meaningful context" is any of:
 - At least one plan or spec doc found
 - At least one tech stack file found (`package.json`, `requirements.txt`, `Cargo.toml`, etc.)
 - User's invocation prompt describes the project (more than just "init-team" or "setup agents")
+
+When checking rule files (`.claude/rules/*.md`): a rule file counts as meaningful **only if it contains real content beyond headings and `[describe X]` / `TODO: fill in` placeholder lines**. A file consisting entirely of section headings and placeholder text does not count as meaningful context.
 
 If **none** of these are true — the project is a blank slate with no description — **STOP** and ask:
 
