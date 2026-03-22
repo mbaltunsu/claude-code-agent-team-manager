@@ -1,7 +1,7 @@
 {
   "name": "team",
   "description": "Manage your project agent team with three skills: team:init-team (full agent setup), team:add-agent (add by name or capability), team:init-project (bootstrap .claude/rules and CLAUDE.md from starter templates). Tracks agents and rules in CLAUDE.md automatically.",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "author": {
     "name": "mbaltunsu"
   },
@@ -13,5 +13,6 @@
     "./skills/init-team",
     "./skills/add-agent",
     "./skills/init-project"
-  ]
+  ],
+  "hooks": "./hooks/hooks.json"
 }

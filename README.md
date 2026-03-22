@@ -68,6 +68,24 @@ Done. The three `team:` skills are now available in every project.
 
 ---
 
+## Updating
+
+The plugin auto-updates at the start of each Claude Code session — no action needed. You'll see a brief notice in the session output when a new version is applied.
+
+**Manual update:**
+```
+/team:init-team update
+```
+
+**Via Claude Code plugin system** (requires refreshing the marketplace cache first):
+```
+/plugin marketplace remove agent-team-manager
+/plugin marketplace add https://github.com/mbaltunsu/claude-code-agent-team-manager.git
+/plugin update team@agent-team-manager
+```
+
+---
+
 ## Three skills
 
 ### `/team:init-project` — Start here on a new project

@@ -498,10 +498,10 @@ def _get_local_plugin_json() -> dict:
     return json.loads(plugin_json.read_text(encoding="utf-8"))
 
 
-def cmd_update(repo: Optional[str] = None) -> str:
+def cmd_update(repo: Optional[str] = None, quiet: bool = False) -> str:
     """Check for plugin updates and apply if newer version available.
 
-    Returns JSON string with results.
+    Returns JSON string with results (or human-readable string when quiet=True).
     """
     repo = repo or DEFAULT_PLUGIN_REPO
 
@@ -548,6 +548,8 @@ def cmd_update(repo: Optional[str] = None) -> str:
         local_version = local_meta.get("version", "0.0.0")
 
         if _compare_versions(local_version, remote_version) >= 0:
+            if quiet:
+                return ""
             return json.dumps({
                 "updated": False,
                 "current_version": local_version,
@@ -568,6 +570,8 @@ def cmd_update(repo: Optional[str] = None) -> str:
             shutil.copy2(src_file, dest_file)
             files_updated.append(str(rel))
 
+        if quiet:
+            return f"[team] Plugin updated {local_version} -> {remote_version}"
         return json.dumps({
             "updated": True,
             "old_version": local_version,
@@ -576,6 +580,8 @@ def cmd_update(repo: Optional[str] = None) -> str:
         })
 
     except Exception as e:
+        if quiet:
+            return ""
         return json.dumps({"error": f"Update failed: {str(e)}"})
 
     finally:
@@ -748,6 +754,8 @@ def main():
 
     update_p = subparsers.add_parser("update")
     update_p.add_argument("--repo", default=DEFAULT_PLUGIN_REPO, help="Plugin repository URL")
+    update_p.add_argument("--quiet", action="store_true", default=False,
+                          help="Suppress output unless an update was applied")
 
     remove_p = subparsers.add_parser("remove")
     remove_p.add_argument("--agent", required=True, help="Agent filename to remove")
@@ -816,11 +824,13 @@ def main():
         return
 
     if args.command == "update":
-        result = cmd_update(repo=args.repo)
-        print(result)
-        output = json.loads(result)
-        if "error" in output:
-            sys.exit(1)
+        result = cmd_update(repo=args.repo, quiet=args.quiet)
+        if result:
+            print(result)
+        if not args.quiet:
+            output = json.loads(result)
+            if "error" in output:
+                sys.exit(1)
         return
 
     if args.command == "source-list":
