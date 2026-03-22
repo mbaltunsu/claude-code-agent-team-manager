@@ -8,5 +8,10 @@
   "homepage": "https://github.com/mbaltunsu/claude-code-agent-team-manager",
   "repository": "https://github.com/mbaltunsu/claude-code-agent-team-manager",
   "license": "MIT",
-  "keywords": ["agents", "init", "bootstrap", "claude-code", "team"]
+  "keywords": ["agents", "init", "bootstrap", "claude-code", "team"],
+  "skills": [
+    "./skills/init-team",
+    "./skills/add-agent",
+    "./skills/init-project"
+  ]
 }
