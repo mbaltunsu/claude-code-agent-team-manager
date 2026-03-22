@@ -1,13 +1,15 @@
 {
-  "SessionStart": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "py \"${CLAUDE_PLUGIN_ROOT}/skills/init-team/scripts/init_team.py\" update --quiet || python \"${CLAUDE_PLUGIN_ROOT}/skills/init-team/scripts/init_team.py\" update --quiet || python3 \"${CLAUDE_PLUGIN_ROOT}/skills/init-team/scripts/init_team.py\" update --quiet || true",
-          "timeout": 60
-        }
-      ]
-    }
-  ]
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py \"${CLAUDE_PLUGIN_ROOT}/skills/init-team/scripts/init_team.py\" update --quiet || python \"${CLAUDE_PLUGIN_ROOT}/skills/init-team/scripts/init_team.py\" update --quiet || python3 \"${CLAUDE_PLUGIN_ROOT}/skills/init-team/scripts/init_team.py\" update --quiet || true",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
 }
