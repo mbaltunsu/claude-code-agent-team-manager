@@ -120,10 +120,8 @@ def test_update_claude_md_gets_pointer_to_team_md(tmp_path):
     team_md = tmp_path / "TEAM.md"
     update_project_files(claude_md, team_md, ["backend-developer.md"], dest)
     content = claude_md.read_text(encoding="utf-8")
-    assert "## Project Team" in content
+    assert "## Agents and Rules" in content
     assert "TEAM.md" in content
-    # Agent details should NOT be in CLAUDE.md
-    assert "Backend" not in content
 
 
 def test_update_creates_claude_md_if_missing(tmp_path):
@@ -161,3 +159,75 @@ def test_update_skips_invalid_frontmatter(tmp_path):
     update_project_files(claude_md, team_md, ["bad-agent.md"], dest)
     assert not team_md.exists()
     assert not claude_md.exists()
+
+
+def _setup_update(tmp_path):
+    """Helper: set up a valid agent and run update_project_files."""
+    dest = tmp_path / "agents"
+    dest.mkdir()
+    (dest / "python-pro.md").write_text(
+        "---\nname: python-pro\ndescription: Python expert\n---\n",
+        encoding="utf-8",
+    )
+    claude_md = tmp_path / "CLAUDE.md"
+    team_md = tmp_path / "TEAM.md"
+    update_project_files(claude_md, team_md, ["python-pro.md"], dest)
+    return claude_md.read_text(encoding="utf-8")
+
+
+def test_update_claude_md_has_collaboration_guidelines(tmp_path):
+    content = _setup_update(tmp_path)
+    assert "Team Collaboration Guidelines" in content
+
+
+def test_update_claude_md_mentions_subagents(tmp_path):
+    content = _setup_update(tmp_path)
+    assert "subagents" in content
+
+
+def test_update_claude_md_mentions_worktrees(tmp_path):
+    content = _setup_update(tmp_path)
+    assert "worktrees" in content
+
+
+def test_update_collaboration_guidelines_idempotent(tmp_path):
+    """Re-running update_project_files should not duplicate guidelines."""
+    dest = tmp_path / "agents"
+    dest.mkdir()
+    (dest / "python-pro.md").write_text(
+        "---\nname: python-pro\ndescription: Python expert\n---\n",
+        encoding="utf-8",
+    )
+    claude_md = tmp_path / "CLAUDE.md"
+    team_md = tmp_path / "TEAM.md"
+    update_project_files(claude_md, team_md, ["python-pro.md"], dest)
+    update_project_files(claude_md, team_md, ["python-pro.md"], dest)
+    content = claude_md.read_text(encoding="utf-8")
+    assert content.count("Team Collaboration Guidelines") == 1
+    assert content.count("## Agents and Rules") == 1
+
+
+def test_update_claude_md_lists_installed_agents(tmp_path):
+    dest = tmp_path / "agents"
+    make_agent_in_dest(dest, "python-pro.md", "python-pro", "Python expert")
+    claude_md = tmp_path / "CLAUDE.md"
+    team_md = tmp_path / "TEAM.md"
+    update_project_files(claude_md, team_md, ["python-pro.md"], dest)
+    content = claude_md.read_text(encoding="utf-8")
+    assert "### Installed Agents and Rules" in content
+    assert "python-pro.md" in content
+    assert "Python expert" in content
+
+
+def test_update_claude_md_lists_installed_rules(tmp_path):
+    dest = tmp_path / "agents"
+    make_agent_in_dest(dest, "python-pro.md", "python-pro", "Python expert")
+    rules_dir = tmp_path / "rules"
+    rules_dir.mkdir()
+    (rules_dir / "git-rules.md").write_text("# Git Rules\n", encoding="utf-8")
+    claude_md = tmp_path / "CLAUDE.md"
+    team_md = tmp_path / "TEAM.md"
+    update_project_files(claude_md, team_md, ["python-pro.md"], dest, rules_dir=rules_dir)
+    content = claude_md.read_text(encoding="utf-8")
+    assert "### Installed Agents and Rules" in content
+    assert "git-rules.md" in content
