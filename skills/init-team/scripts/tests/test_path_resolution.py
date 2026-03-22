@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
-from init_team import load_env, resolve_library_path
+from unittest.mock import patch
+from init_team import load_env, resolve_library_path, DEFAULT_AGENTS_DIR
 
 
 # --- load_env ---
@@ -61,3 +62,12 @@ def test_resolve_errors_when_path_not_exist(tmp_path):
 def test_resolve_errors_when_no_categories(tmp_path):
     with pytest.raises(SystemExit):
         resolve_library_path(cli_path=str(tmp_path), env_path=None)
+
+
+def test_resolve_falls_back_to_central_agents_dir(tmp_path):
+    """When no cli/env path given but central dir has categories/, use it."""
+    central = tmp_path / "central"
+    (central / "categories").mkdir(parents=True)
+    with patch("init_team.DEFAULT_AGENTS_DIR", central):
+        result = resolve_library_path(cli_path=None, env_path=None)
+    assert result == str(central)

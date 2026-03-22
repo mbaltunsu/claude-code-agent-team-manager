@@ -4,10 +4,7 @@ import shutil
 import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from init_team import cmd_download
-
-
-DEFAULT_REPO = "https://github.com/VoltAgent/awesome-claude-code-subagents.git"
+from init_team import cmd_download, DEFAULT_REPO, DEFAULT_SOURCE_ENTRY
 
 
 # --- dest directory creation ---
@@ -180,6 +177,30 @@ def test_download_cleans_temp_dir(tmp_path):
         cmd_download(dest=str(dest))
 
     assert not clone_dir.exists()
+
+
+def test_download_uses_source_from_registry(tmp_path):
+    """--source voltagent resolves repo URL from registry."""
+    dest = tmp_path / "lib"
+    with patch("init_team.shutil.which", return_value="/usr/bin/git"), \
+         patch("init_team.subprocess.run") as mock_run, \
+         patch("init_team.tempfile.mkdtemp", return_value=str(tmp_path / "tmpclone")), \
+         patch("init_team.SOURCES_REGISTRY", tmp_path / "sources.json"):
+        mock_run.return_value = MagicMock(returncode=0, stderr="")
+        (tmp_path / "tmpclone" / "categories").mkdir(parents=True)
+        cmd_download(dest=str(dest), source_id="voltagent")
+
+    clone_call = mock_run.call_args_list[0]
+    assert DEFAULT_REPO in clone_call[0][0]
+
+
+def test_download_errors_on_unknown_source(tmp_path):
+    """--source with unknown id returns error JSON."""
+    dest = tmp_path / "lib"
+    with patch("init_team.SOURCES_REGISTRY", tmp_path / "sources.json"):
+        result = cmd_download(dest=str(dest), source_id="nonexistent-source")
+    output = json.loads(result)
+    assert "error" in output
 
 
 def test_download_cleanup_failure_warns(tmp_path):
