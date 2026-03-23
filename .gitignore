@@ -1,4 +1,29 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
+.pytest_cache/
+
+# Environment
 .env
+
+# Claude Code user-specific settings (machine paths, permissions, enabled plugins)
+.claude/settings.json
+.claude/settings.local.json
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Worktrees (if using project-local worktrees)
+.worktrees/
+
+# Stale plugin subdirectory (no longer used)
+plugin/
