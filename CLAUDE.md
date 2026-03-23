@@ -39,8 +39,10 @@ claude-code-agent-team-manager/
 │   │   └── SKILL.md          ← team:add-agent skill (add single agent by name or capability)
 │   ├── init-project/
 │   │   └── SKILL.md          ← team:init-project skill (bootstrap .claude/rules and CLAUDE.md)
-│   └── stats/
-│       └── SKILL.md          ← team:stats skill (session usage statistics and agent impact)
+│   ├── stats/
+│   │   └── SKILL.md          ← team:stats skill (session usage statistics and agent impact)
+│   └── join-project/
+│       └── SKILL.md          ← team:join-project skill (onboard to an existing project)
 ├── starter_template/
 │   ├── CLAUDE_STARTER.md    ← workflow guide; copied to user project's CLAUDE.md by init-project
 │   ├── GIT_RULES.md         ← git rules; copied to .claude/rules/git-rules.md by init-project
@@ -60,14 +62,15 @@ claude-code-agent-team-manager/
 
 Two components work together:
 
-Four skills work together under the `team:` namespace:
+Five skills work together under the `team:` namespace:
 
 1. **`team:init-team`** — Full agent roster setup: scans library → gathers project context → recommends agents → copies approved agents → updates `TEAM.md` and `## Agents and Rules` in `CLAUDE.md`.
 2. **`team:add-agent`** — Add a single agent by filename or capability description. Updates `TEAM.md` and `CLAUDE.md`.
 3. **`team:init-project`** — Bootstrap a new project: creates `.claude/rules/` and `.claude/agents/`, copies `CLAUDE_STARTER.md` to `CLAUDE.md` (with explicit permission), and generates rule files from user Q&A.
 4. **`team:stats`** — Session usage statistics: tokens, duration, tool usage, agent vs non-agent comparison.
+5. **`team:join-project`** — Onboard to an existing project: analyzes rules, agents, codebase, and docs; presents a project briefing; offers to update stale config and add missing agents.
 
-All four invoke **`init_team.py`** (Python CLI) for filesystem operations. Subcommands:
+All five invoke **`init_team.py`** (Python CLI) for filesystem operations. Subcommands:
    - `scan --path <library>` — walks `categories/` in the agent library, reads frontmatter, returns JSON
    - `copy --agents <paths> --path <library> --dest <dir> --claude-md <file> --team-md <file>` — copies approved agents, skips existing ones, writes `TEAM.md`, updates `CLAUDE.md`
    - `add --agent <file> --path <library> --dest <dir>` — add a single agent by filename, updates TEAM.md and CLAUDE.md

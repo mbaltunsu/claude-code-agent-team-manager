@@ -13,7 +13,8 @@
     "./skills/init-team",
     "./skills/add-agent",
     "./skills/init-project",
-    "./skills/stats"
+    "./skills/stats",
+    "./skills/join-project"
   ],
   "hooks": "./hooks/hooks.json"
 }

@@ -86,7 +86,7 @@ The plugin auto-updates at the start of each Claude Code session — no action n
 
 ---
 
-## Three skills
+## Skills
 
 ### `/team:init-project` — Start here on a new project
 
@@ -97,6 +97,24 @@ Sets up your project's Claude Code configuration from scratch:
 3. Generates rule files for your specific project — architecture, tech stack, git conventions — based on what it finds in your codebase
 
 Run this **once**, at the beginning of a project.
+
+---
+
+### `/team:join-project` — Join an existing project
+
+Joining a project someone else set up? This gives you the full picture:
+
+```
+/team:join-project
+```
+
+Claude will:
+- Read all rule files, CLAUDE.md, TEAM.md, and your codebase
+- Present a structured **project briefing** (purpose, tech stack, architecture, git workflow, active agents)
+- Ask if anything is outdated or missing
+- Help you update rules and add agents for your specific task
+
+Run this when you're **new to a project** or returning after a long break.
 
 ---
 
