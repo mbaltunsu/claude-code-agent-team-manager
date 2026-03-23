@@ -27,7 +27,18 @@ If the user skips a question or says "skip" / "I don't know", mark that section 
 
 ## Step 1: Create Base Directories
 
-Run:
+Check the user's tech stack answer from Step 0. If the project uses any frontend technology (React, Vue, Svelte, Next.js, Angular, HTML/CSS, Flutter, React Native, SwiftUI, or similar), include the `--frontend-rules-src` flag. Otherwise omit it.
+
+**With frontend:**
+```bash
+py "${CLAUDE_PLUGIN_ROOT}/skills/init-team/scripts/init_team.py" init-project \
+  --rules-dest .claude/rules \
+  --agents-dest .claude/agents \
+  --git-rules-src "${CLAUDE_PLUGIN_ROOT}/starter_template/GIT_RULES.md" \
+  --frontend-rules-src "${CLAUDE_PLUGIN_ROOT}/starter_template/FRONTEND_RULES.md"
+```
+
+**Without frontend:**
 ```bash
 py "${CLAUDE_PLUGIN_ROOT}/skills/init-team/scripts/init_team.py" init-project \
   --rules-dest .claude/rules \
@@ -163,7 +174,7 @@ Report the output. The `## Agents and Rules` section in CLAUDE.md now lists all 
 Summarize what was created:
 - Directories created/skipped
 - CLAUDE.md status (written / skipped)
-- Rule files created/skipped: `git-rules.md`, `architecture.md`, `tech-stack.md`, `project-context.md`
+- Rule files created/skipped: `git-rules.md`, `frontend-rules.md` (if frontend), `architecture.md`, `tech-stack.md`, `project-context.md`
 - Whether the `## Agents and Rules` section was updated
 
 Tell the user:

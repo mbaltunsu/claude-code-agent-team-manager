@@ -85,3 +85,22 @@ def test_init_project_json_output(tmp_path, capsys):
     assert "files_copied" in data
     assert "files_skipped" in data
     assert "git-rules.md" in data["files_copied"]
+
+
+def test_init_project_copies_frontend_rules(tmp_path):
+    git_src = _make_git_rules_src(tmp_path)
+    fe_src = tmp_path / "FRONTEND_RULES.md"
+    fe_src.write_text("# Frontend Rules\n\nNo static text selectable.\n", encoding="utf-8")
+    rules_dest = tmp_path / "rules"
+    agents_dest = tmp_path / "agents"
+    cmd_init_project(str(rules_dest), str(agents_dest), str(git_src), frontend_rules_src=str(fe_src))
+    assert (rules_dest / "frontend-rules.md").exists()
+    assert "Frontend Rules" in (rules_dest / "frontend-rules.md").read_text(encoding="utf-8")
+
+
+def test_init_project_skips_frontend_rules_when_not_provided(tmp_path):
+    git_src = _make_git_rules_src(tmp_path)
+    rules_dest = tmp_path / "rules"
+    agents_dest = tmp_path / "agents"
+    cmd_init_project(str(rules_dest), str(agents_dest), str(git_src))
+    assert not (rules_dest / "frontend-rules.md").exists()

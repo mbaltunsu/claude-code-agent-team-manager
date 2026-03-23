@@ -689,8 +689,8 @@ def cmd_download(dest: Optional[str] = None, repo: Optional[str] = None, source_
     return json.dumps(result)
 
 
-def cmd_init_project(rules_dest: str, agents_dest: str, git_rules_src: str) -> str:
-    """Create .claude/rules and .claude/agents dirs; copy git-rules.md if not present."""
+def cmd_init_project(rules_dest: str, agents_dest: str, git_rules_src: str, frontend_rules_src: Optional[str] = None) -> str:
+    """Create .claude/rules and .claude/agents dirs; copy git-rules.md and optionally frontend-rules.md."""
     result = {"dirs_created": [], "files_copied": [], "files_skipped": []}
 
     agents_path = Path(agents_dest)
@@ -721,6 +721,19 @@ def cmd_init_project(rules_dest: str, agents_dest: str, git_rules_src: str) -> s
         shutil.copy2(git_rules_source, git_rules_dest)
         print(f"[OK] git-rules.md created")
         result["files_copied"].append("git-rules.md")
+
+    if frontend_rules_src:
+        fe_rules_dest = rules_path / "frontend-rules.md"
+        fe_rules_source = Path(frontend_rules_src)
+        if not fe_rules_source.exists():
+            print(f"Warning: frontend-rules source not found: {frontend_rules_src}", file=sys.stderr)
+        elif fe_rules_dest.exists():
+            print("[SKIP] frontend-rules.md already exists")
+            result["files_skipped"].append("frontend-rules.md")
+        else:
+            shutil.copy2(fe_rules_source, fe_rules_dest)
+            print("[OK] frontend-rules.md created")
+            result["files_copied"].append("frontend-rules.md")
 
     print(json.dumps(result))
     return json.dumps(result)
@@ -771,6 +784,24 @@ def cmd_stats(project_path=None, last_n=10):
         for tool, count in s.get("tool_counts", {}).items():
             tool_usage[tool] = tool_usage.get(tool, 0) + count
 
+    # Agent vs non-agent comparison
+    agent_list = [s for s in sessions if s.get("uses_task_agent")]
+    non_agent_list = [s for s in sessions if not s.get("uses_task_agent")]
+
+    def _avg_tokens(sess_list):
+        if not sess_list:
+            return 0
+        return sum(s.get("input_tokens", 0) + s.get("output_tokens", 0) for s in sess_list) // len(sess_list)
+
+    def _avg_duration(sess_list):
+        if not sess_list:
+            return 0
+        return sum(s.get("duration_minutes", 0) for s in sess_list) // len(sess_list)
+
+    avg_agent = _avg_tokens(agent_list)
+    avg_non_agent = _avg_tokens(non_agent_list)
+    overhead_pct = round((avg_agent - avg_non_agent) / max(avg_non_agent, 1) * 100) if avg_non_agent > 0 else None
+
     result = {
         "sessions": len(sessions),
         "total_tokens": {"input": total_input, "output": total_output},
@@ -779,8 +810,16 @@ def cmd_stats(project_path=None, last_n=10):
         "total_files_modified": total_files,
         "total_commits": total_commits,
         "agent_sessions": agent_sessions,
+        "non_agent_sessions": len(non_agent_list),
         "tool_usage": tool_usage,
         "avg_tokens_per_session": (total_input + total_output) // max(len(sessions), 1),
+        "comparison": {
+            "avg_tokens_with_agents": avg_agent,
+            "avg_tokens_without_agents": avg_non_agent,
+            "avg_duration_with_agents": _avg_duration(agent_list),
+            "avg_duration_without_agents": _avg_duration(non_agent_list),
+            "overhead_percent": overhead_pct,
+        },
     }
     print(json.dumps(result, indent=2))
 
@@ -846,6 +885,7 @@ def main():
     init_project_p.add_argument("--rules-dest", default=".claude/rules")
     init_project_p.add_argument("--agents-dest", default=".claude/agents")
     init_project_p.add_argument("--git-rules-src", required=True)
+    init_project_p.add_argument("--frontend-rules-src", default=None)
 
     stats_p = subparsers.add_parser("stats")
     stats_p.add_argument("--project", default=None, help="Filter by project path")
@@ -864,7 +904,8 @@ def main():
         return
 
     if args.command == "init-project":
-        cmd_init_project(args.rules_dest, args.agents_dest, args.git_rules_src)
+        cmd_init_project(args.rules_dest, args.agents_dest, args.git_rules_src,
+                         frontend_rules_src=args.frontend_rules_src)
         return
 
     if args.command == "update-docs":

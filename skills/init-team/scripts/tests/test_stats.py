@@ -132,3 +132,36 @@ def test_stats_counts_agent_sessions(tmp_path, capsys):
 
     out = json.loads(capsys.readouterr().out)
     assert out["agent_sessions"] == 2
+
+
+def test_stats_comparison_agent_vs_non_agent(tmp_path, capsys):
+    meta_dir = tmp_path / "session-meta"
+    meta_dir.mkdir()
+    _write_session_meta(meta_dir, "a1", "/proj", uses_task_agent=True, input_tokens=3000, output_tokens=1000)
+    _write_session_meta(meta_dir, "a2", "/proj", uses_task_agent=True, input_tokens=5000, output_tokens=1000)
+    _write_session_meta(meta_dir, "n1", "/proj", uses_task_agent=False, input_tokens=1000, output_tokens=500)
+    _write_session_meta(meta_dir, "n2", "/proj", uses_task_agent=False, input_tokens=1000, output_tokens=500)
+
+    with patch("init_team.USAGE_DATA_DIR", tmp_path):
+        init_team.cmd_stats(project_path=None, last_n=10)
+
+    out = json.loads(capsys.readouterr().out)
+    assert out["comparison"]["avg_tokens_with_agents"] == 5000  # (3000+1000+5000+1000) / 2
+    assert out["comparison"]["avg_tokens_without_agents"] == 1500  # (1000+500+1000+500) / 2
+    assert out["comparison"]["overhead_percent"] is not None
+    assert out["comparison"]["overhead_percent"] > 0
+    assert out["non_agent_sessions"] == 2
+
+
+def test_stats_comparison_no_baseline(tmp_path, capsys):
+    """When all sessions use agents, overhead_percent should be None."""
+    meta_dir = tmp_path / "session-meta"
+    meta_dir.mkdir()
+    _write_session_meta(meta_dir, "a1", "/proj", uses_task_agent=True, input_tokens=3000, output_tokens=1000)
+
+    with patch("init_team.USAGE_DATA_DIR", tmp_path):
+        init_team.cmd_stats(project_path=None, last_n=10)
+
+    out = json.loads(capsys.readouterr().out)
+    assert out["comparison"]["avg_tokens_without_agents"] == 0
+    assert out["comparison"]["overhead_percent"] is None
