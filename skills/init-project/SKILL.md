@@ -154,9 +154,51 @@ Same overwrite permission flow. Write using only what the user told you in Step 
 
 ---
 
-## Step 6: Update `## Agents and Rules` Section in CLAUDE.md
+## Step 6: Skills Guide
 
-Run:
+Help the user set up a skills guide for the project.
+
+### 6a. Discover Available Skills
+
+List all skills available in the current session. You have access to these — they appear in the system-reminder listing available skills. Compile the full list with each skill's name and description.
+
+### 6b. Present and Ask
+
+Show available skills in a table with a "Suggested For" column based on the tech stack the user described in Step 0.
+
+Ask:
+
+> "Which skills do you want to use in this project? You can:
+>
+> 1. Select specific skills by name (comma-separated)
+> 2. Say **all** to include everything available
+> 3. Say **recommended** and I'll pick the best ones for your project
+> 4. Say **skip** to set this up later"
+
+Wait for the response.
+
+### 6c. Write Skills Guide
+
+If the user selected skills (options 1-3), write `.claude/rules/skills-guide.md` with the selected skills organized by category (Planning, Development, Quality, Frontend, Team Management). Only include relevant sections. Use this format:
+
+```markdown
+# Skills Guide
+
+Preferred skills for this project. Use these before starting related tasks.
+
+## [Category]
+- `/skill-name` — when to use it
+```
+
+If the user said **recommended**, pick skills that match the project's tech stack and goals from Step 0.
+
+If the user said **skip**, do not create the file.
+
+---
+
+## Step 7: Update `## Agents and Rules` Section in CLAUDE.md
+
+Run (this picks up the new skills-guide.md automatically):
 ```bash
 py "${CLAUDE_PLUGIN_ROOT}/skills/init-team/scripts/init_team.py" update-docs \
   --claude-md CLAUDE.md \

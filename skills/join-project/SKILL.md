@@ -182,9 +182,103 @@ This refreshes the `## Agents and Rules` section in CLAUDE.md to reflect the cur
 
 ---
 
-## Step 6: Review Agents
+## Step 6: Skills Guide
 
-Based on the user's task/focus area from Step 4 question 4:
+Set up a skills guide so the team knows which skills to use for which tasks.
+
+### 6a. Discover Available Skills
+
+List all skills available in the current session. You have access to these — they appear in the system-reminder listing available skills. Compile the full list with each skill's name and description.
+
+Also check if `.claude/rules/skills-guide.md` already exists. If it does, read it and show the user what's currently configured.
+
+### 6b. Present Skills to the User
+
+Show the user the available skills in a table:
+
+```
+AVAILABLE SKILLS
+================
+
+| Skill | Description | Suggested For |
+|-------|-------------|---------------|
+| /team:init-team | Manage agent teams | Agent setup |
+| /team:add-agent | Add single agent | Quick agent adds |
+| /team:stats | Session statistics | Cost tracking |
+| /superpowers:writing-plans | Write implementation plans | Before any multi-step work |
+| /superpowers:test-driven-development | TDD workflow | Feature implementation |
+| /ui-ux-pro-max | UI/UX design intelligence | Frontend components |
+| ... | ... | ... |
+```
+
+Fill the "Suggested For" column based on the project's tech stack and the user's task from Step 4.
+
+Then ask:
+
+> "Which of these skills do you want to use in this project? You can:
+>
+> 1. Select specific skills by name (comma-separated)
+> 2. Say **all** to include everything
+> 3. Say **recommended** and I'll pick the best ones for your project
+> 4. Say **skip** to set this up later"
+
+Wait for the user's response.
+
+### 6c. Write Skills Guide
+
+If the user selected skills (options 1-3), create or overwrite `.claude/rules/skills-guide.md`:
+
+```markdown
+# Skills Guide
+
+Preferred skills for this project. Use these before starting related tasks.
+
+## Planning & Architecture
+- `/superpowers:writing-plans` — before any multi-step implementation
+- `/superpowers:brainstorming` — before any creative or design work
+
+## Development
+- `/superpowers:test-driven-development` — for all feature work and bug fixes
+- `/superpowers:executing-plans` — to execute a written plan with review checkpoints
+
+## Quality
+- `/superpowers:requesting-code-review` — before merging any feature branch
+- `/superpowers:verification-before-completion` — before claiming work is done
+
+## Frontend (if applicable)
+- `/ui-ux-pro-max` — for all UI component work
+- `/frontend-design` — for distinctive frontend interfaces
+
+## Team Management
+- `/team:init-team` — full agent roster setup
+- `/team:add-agent` — add agent by name or capability
+- `/team:stats` — session usage statistics
+- `/team:join-project` — onboard new team members
+
+## Workflow Rules
+- Always run the relevant skill BEFORE starting the related task
+- Skills marked as "Use when..." in their descriptions trigger automatically — but prefer explicit invocation for important work
+- If a skill and an agent both cover a task, use the skill first (it orchestrates), then the agent (it executes)
+```
+
+Only include sections and skills the user selected. If the user said **recommended**, pick skills that match the project's tech stack, current agents, and the user's focus area.
+
+If the user said **skip**, do not create the file.
+
+After writing, run `update-docs` to refresh CLAUDE.md:
+```bash
+<PYTHON> "${CLAUDE_PLUGIN_ROOT}/skills/init-team/scripts/init_team.py" update-docs \
+  --claude-md CLAUDE.md \
+  --team-md TEAM.md \
+  --agents-dest .claude/agents \
+  --rules-dest .claude/rules
+```
+
+---
+
+## Step 7: Review Agents
+
+Based on the user's task/focus area from Step 4:
 
 Check if the current agent team covers the user's needs. Consider:
 - Does the task need a specialist agent that isn't installed?
@@ -201,7 +295,7 @@ If the team looks good:
 
 ---
 
-## Step 7: Ready to Work
+## Step 8: Ready to Work
 
 Summarize what was done:
 - Briefing presented
