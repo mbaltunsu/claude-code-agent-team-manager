@@ -49,9 +49,11 @@ def test_resolve_cli_wins_over_env(tmp_path):
     assert result == str(cli_lib)
 
 
-def test_resolve_errors_when_neither():
-    with pytest.raises(SystemExit):
-        resolve_library_path(cli_path=None, env_path=None)
+def test_resolve_errors_when_neither(tmp_path):
+    fake_central = tmp_path / "no-agents"
+    with patch("init_team.DEFAULT_AGENTS_DIR", fake_central):
+        with pytest.raises(SystemExit):
+            resolve_library_path(cli_path=None, env_path=None)
 
 
 def test_resolve_errors_when_path_not_exist(tmp_path):

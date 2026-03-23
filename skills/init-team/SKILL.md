@@ -285,6 +285,30 @@ python skills/init-team/scripts/init_team.py source-add \
 
 Report the output.
 
+### Quick Action: Stats
+
+Triggered when the user says "stats", "show statistics", or "usage stats".
+
+Run Step 1 (detect Python), then:
+```bash
+<PYTHON> skills/init-team/scripts/init_team.py stats --project "<CWD>" --last 10
+```
+
+Parse the JSON output and display a formatted summary:
+
+| Metric | Value |
+|---|---|
+| Sessions | 10 |
+| Total tokens (in/out) | 50,000 / 12,000 |
+| Duration | 45 min |
+| Lines changed (+/-) | +320 / -80 |
+| Files modified | 25 |
+| Commits | 8 |
+| Agent sessions | 6 of 10 |
+| Top tools | Agent: 15, Bash: 40, Edit: 30 |
+
+If the user asks for "all stats" or "global stats", omit the `--project` flag to show stats across all projects.
+
 ### Quick Action: Import
 
 Triggered when the user says "import <path>" or "import local library".

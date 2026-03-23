@@ -124,6 +124,7 @@ Agents are copied to `.claude/agents/` and tracked in `TEAM.md`. Your `CLAUDE.md
 | `/team:init-team update` | Self-update the plugin |
 | `/team:init-team source list` | Show registered agent sources |
 | `/team:init-team import <path>` | Import a local library |
+| `/team:init-team stats` | Show session usage statistics |
 
 ---
 
@@ -176,6 +177,18 @@ Once your team is set up, here's how to get the most out of it:
 Use subagents for work that can run in parallel.
 Use worktrees so agents don't step on each other.
 ```
+
+Worktree branches are **automatically pushed to remote** when an agent finishes (via a SubagentStop hook), so all agent work is visible for review on GitHub.
+
+**Session statistics**
+
+Track how much work your agents are doing:
+
+```
+/team:init-team stats
+```
+
+Shows total tokens, duration, lines changed, tool usage, and how many sessions used parallel agents — all from Claude Code's built-in session metadata.
 
 **Git discipline built in**
 

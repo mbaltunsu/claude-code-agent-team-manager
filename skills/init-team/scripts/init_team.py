@@ -18,6 +18,7 @@ TEAM_MANAGEMENT_DIR = Path.home() / ".claude" / "team-management"
 DEFAULT_AGENTS_DIR = TEAM_MANAGEMENT_DIR / "agents"
 SOURCES_REGISTRY = TEAM_MANAGEMENT_DIR / "sources.json"
 DEFAULT_DEST = str(DEFAULT_AGENTS_DIR)
+USAGE_DATA_DIR = Path.home() / ".claude" / "usage-data"
 
 DEFAULT_SOURCE_ENTRY = {
     "id": "voltagent",
@@ -737,6 +738,53 @@ def cmd_update_docs(claude_md: str, team_md: str, agents_dest: str, rules_dest: 
     )
 
 
+def cmd_stats(project_path=None, last_n=10):
+    """Read session-meta JSON files and output aggregated stats."""
+    meta_dir = USAGE_DATA_DIR / "session-meta"
+    sessions = []
+
+    if meta_dir.is_dir():
+        for f in sorted(meta_dir.glob("*.json")):
+            try:
+                data = json.loads(f.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+            if project_path and data.get("project_path") != project_path:
+                continue
+            sessions.append(data)
+
+    # Sort by start_time descending, take last N
+    sessions.sort(key=lambda s: s.get("start_time", ""), reverse=True)
+    sessions = sessions[:last_n]
+
+    total_input = sum(s.get("input_tokens", 0) for s in sessions)
+    total_output = sum(s.get("output_tokens", 0) for s in sessions)
+    total_duration = sum(s.get("duration_minutes", 0) for s in sessions)
+    total_added = sum(s.get("lines_added", 0) for s in sessions)
+    total_removed = sum(s.get("lines_removed", 0) for s in sessions)
+    total_files = sum(s.get("files_modified", 0) for s in sessions)
+    total_commits = sum(s.get("git_commits", 0) for s in sessions)
+    agent_sessions = sum(1 for s in sessions if s.get("uses_task_agent"))
+
+    tool_usage = {}  # type: dict
+    for s in sessions:
+        for tool, count in s.get("tool_counts", {}).items():
+            tool_usage[tool] = tool_usage.get(tool, 0) + count
+
+    result = {
+        "sessions": len(sessions),
+        "total_tokens": {"input": total_input, "output": total_output},
+        "total_duration_minutes": total_duration,
+        "total_lines_changed": {"added": total_added, "removed": total_removed},
+        "total_files_modified": total_files,
+        "total_commits": total_commits,
+        "agent_sessions": agent_sessions,
+        "tool_usage": tool_usage,
+        "avg_tokens_per_session": (total_input + total_output) // max(len(sessions), 1),
+    }
+    print(json.dumps(result, indent=2))
+
+
 def main():
     _ensure_utf8_stdout()
     parser = argparse.ArgumentParser(description="init-team script")
@@ -799,6 +847,10 @@ def main():
     init_project_p.add_argument("--agents-dest", default=".claude/agents")
     init_project_p.add_argument("--git-rules-src", required=True)
 
+    stats_p = subparsers.add_parser("stats")
+    stats_p.add_argument("--project", default=None, help="Filter by project path")
+    stats_p.add_argument("--last", type=int, default=10, help="Number of recent sessions")
+
     update_docs_p = subparsers.add_parser("update-docs")
     update_docs_p.add_argument("--claude-md", default="CLAUDE.md")
     update_docs_p.add_argument("--team-md", default="TEAM.md")
@@ -806,6 +858,10 @@ def main():
     update_docs_p.add_argument("--rules-dest", default=".claude/rules")
 
     args = parser.parse_args()
+
+    if args.command == "stats":
+        cmd_stats(project_path=args.project, last_n=args.last)
+        return
 
     if args.command == "init-project":
         cmd_init_project(args.rules_dest, args.agents_dest, args.git_rules_src)

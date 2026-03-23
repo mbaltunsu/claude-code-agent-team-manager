@@ -72,6 +72,8 @@ Before committing:
 - Never let multiple subagents edit the same working tree simultaneously.
 - Prefer separate worktrees for parallel implementation, investigation, or refactoring streams.
 - One task, one branch, one worktree.
+- Before completing work in a worktree, always push the branch to remote: `git push -u origin <branch-name>`
+- This ensures all agent work is visible on the remote repository for review and collaboration.
 
 Parallel workflow rules:
 

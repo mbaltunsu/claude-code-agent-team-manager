@@ -12,11 +12,15 @@ claude-code-agent-team-manager/
 │   ├── marketplace.json     ← plugin marketplace manifest (plugin name: "team")
 │   └── plugin.json          ← plugin identity and metadata
 ├── .gitignore
+├── hooks/
+│   └── hooks.json           ← SessionStart (auto-update) + SubagentStop (auto-push worktree branches)
+├── scripts/
+│   └── push-worktree-branch.sh  ← auto-push worktree branches to remote on SubagentStop
 ├── skills/
 │   ├── init-team/
 │   │   ├── SKILL.md          ← team:init-team skill (full agent roster setup)
 │   │   └── scripts/
-│   │       ├── init_team.py         ← Python CLI: scan, copy, add, remove, list, update, download, init-project, update-docs, import, source-list, source-add, source-remove
+│   │       ├── init_team.py         ← Python CLI: scan, copy, add, remove, list, update, download, init-project, update-docs, import, source-list, source-add, source-remove, stats
 │   │       ├── conftest.py          ← pytest path and encoding setup
 │   │       └── tests/
 │   │           ├── test_path_resolution.py
@@ -29,14 +33,16 @@ claude-code-agent-team-manager/
 │   │           ├── test_download.py
 │   │           ├── test_init_project.py
 │   │           ├── test_sources.py
-│   │           └── test_import.py
+│   │           ├── test_import.py
+│   │           └── test_stats.py
 │   ├── add-agent/
 │   │   └── SKILL.md          ← team:add-agent skill (add single agent by name or capability)
 │   └── init-project/
 │       └── SKILL.md          ← team:init-project skill (bootstrap .claude/rules and CLAUDE.md)
 ├── starter_template/
 │   ├── CLAUDE_STARTER.md    ← workflow guide; copied to user project's CLAUDE.md by init-project
-│   └── GIT_RULES.md         ← git rules; copied to .claude/rules/git-rules.md by init-project
+│   ├── GIT_RULES.md         ← git rules; copied to .claude/rules/git-rules.md by init-project
+│   └── FRONTEND_RULES.md   ← frontend rules; available for frontend projects
 ├── docs/
 │   └── superpowers/
 │       ├── specs/           ← design specs (one per feature)
